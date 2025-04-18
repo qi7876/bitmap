@@ -82,14 +82,6 @@ bool CsvParser::parseLine(std::string_view line, core::StringId& out_id, core::S
     // We will trim individual parts later.
     std::vector<std::string> parts = utils::split(line, delimiter_, false); // Don't skip empty
 
-    // --- DEBUG START ---
-    std::cerr << "DEBUG: Line='" << line << "', Parts={";
-    for(size_t i = 0; i < parts.size(); ++i) {
-        std::cerr << "\"" << parts[i] << "\"" << (i == parts.size() - 1 ? "" : ", ");
-    }
-    std::cerr << "}" << std::endl;
-    // --- DEBUG END ---
-
     if (parts.empty()) {
         return false; // Should not happen if line wasn't empty/whitespace-only, but check anyway
     }

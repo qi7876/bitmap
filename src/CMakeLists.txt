@@ -21,7 +21,8 @@ target_include_directories(bitmap_index PUBLIC
 )
 
 # 链接 Roaring 库
-target_link_libraries(bitmap_index PRIVATE roaring::roaring) # vcpkg 通常提供导入目标
+# In Bitmap/src/CMakeLists.txt
+target_link_libraries(bitmap_index PUBLIC roaring::roaring) # Changed PRIVATE to PUBLIC
 
 # 可以设置 C++ 标准等
 target_compile_features(bitmap_index PRIVATE cxx_std_17)
