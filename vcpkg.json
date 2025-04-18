@@ -1,0 +1,8 @@
+{
+  "name": "bitmap-inverted-index",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "roaring",
+    "catch2"
+  ]
+}
