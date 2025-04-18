@@ -1,0 +1,5 @@
+doc10 | user:admin | level:5 | status:active
+doc20 | user:guest | level:1
+doc30 | user:admin | level:9 | region:emea
+doc40 | status:active | region:na | level:5
+doc10 | region:na
