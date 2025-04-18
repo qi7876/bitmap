@@ -3,3 +3,5 @@ doc20 | user:guest | level:1
 doc30 | user:admin | level:9 | region:emea
 doc40 | status:active | region:na | level:5
 doc10 | region:na
+doc30 | status:active
+doc30 | status:active | user:admin | level:9 | region:emea | course:uestc

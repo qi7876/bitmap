@@ -108,6 +108,28 @@ namespace bitmap_index::core
          */
         size_t getTagCount() const;
 
+        /**
+         * @brief Clears all mapping data.
+         */
+        void clear(); // <--- ADD THIS DECLARATION
+
+        /**
+         * @brief Saves mapping data (vectors only) to a binary output stream.
+         * Format: [doc_vector_size] ([string_len] [string_bytes]...)
+         * [tag_vector_size] ([string_len] [string_bytes]...)
+         * @param os Output stream.
+         * @return True on success.
+         */
+        bool save(std::ostream& os) const;
+
+        /**
+         * @brief Loads mapping data (vectors) from a binary input stream.
+         * Rebuilds the reverse maps after loading vectors. Clears existing data.
+         * @param is Input stream.
+         * @return True on success.
+         */
+        bool load(std::istream& is);
+
     private:
         // Using vectors for DocId/TagId -> String mapping (fast index access)
         std::vector<StringId> doc_id_to_string_;

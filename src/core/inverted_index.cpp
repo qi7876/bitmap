@@ -1,9 +1,29 @@
 #include "bitmap_index/core/inverted_index.h"
 #include <stdexcept> // For potential future exceptions
-#include <limits>    // For numeric_limits
+#include <fstream> // Include fstream for ofstream/ifstream operations if using files directly
+#include <vector>
+#include <iostream> // For error logging
 
 namespace bitmap_index::core
 {
+    // --- Basic Binary I/O Helpers (Simplified) ---
+    // Place these here or in a separate binary_util file
+    template <typename T>
+    inline bool write_binary(std::ostream& os, const T& value)
+    {
+        os.write(reinterpret_cast<const char*>(&value), sizeof(T));
+        return os.good();
+    }
+
+    template <typename T>
+    inline bool read_binary(std::istream& is, T& value)
+    {
+        is.read(reinterpret_cast<char*>(&value), sizeof(T));
+        return is.good();
+    }
+
+    // --- End Helpers ---
+
     // Helper function to ensure vector size (internal use)
     bool InvertedIndex::ensureTagCapacity(TagId tag_id)
     {
@@ -288,5 +308,132 @@ namespace bitmap_index::core
         {
             // Log error shrinking vector
         }
+    }
+
+    bool InvertedIndex::save(std::ostream& os) const
+    {
+        // std::shared_lock lock(rw_mutex_);
+
+        try
+        {
+            uint64_t num_bitmaps = tag_to_bitmap_.size();
+            if (!write_binary(os, num_bitmaps)) return false;
+
+            for (const auto& bitmap : tag_to_bitmap_)
+            {
+                // 1. Get required size (portable)
+                // ---> FIX: Use getSizeInBytes(true) <---
+                uint32_t expected_size = static_cast<uint32_t>(bitmap.getSizeInBytes(true));
+                if (!write_binary(os, expected_size)) return false;
+
+                if (expected_size > 0)
+                {
+                    // 2. Allocate buffer
+                    std::vector<char> buffer(expected_size);
+
+                    // 3. Serialize to buffer (portable)
+                    // ---> FIX: Use write(buffer, true) <---
+                    bitmap.write(buffer.data(), true);
+
+                    // 4. Write buffer to stream
+                    os.write(buffer.data(), expected_size);
+                    if (!os.good()) return false;
+                }
+                // If expected_size is 0, just write 0 size and continue
+            }
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Error saving InvertedIndex: " << e.what() << std::endl;
+            return false;
+        }
+        return os.good();
+    }
+
+
+    bool InvertedIndex::load(std::istream& is)
+    {
+        // std::unique_lock lock(rw_mutex_);
+
+        try
+        {
+            uint64_t num_bitmaps = 0;
+            if (!read_binary(is, num_bitmaps))
+            {
+                if (is.eof() && is.gcount() == 0)
+                {
+                    // Check if EOF *before* trying to read
+                    tag_to_bitmap_.clear(); // Ensure index is empty
+                    return true; // Empty file is valid for empty index
+                }
+                std::cerr << "Error reading number of bitmaps." << std::endl;
+                return false; // Read error
+            }
+
+            tag_to_bitmap_.clear();
+            tag_to_bitmap_.resize(static_cast<size_t>(num_bitmaps));
+
+            for (uint64_t i = 0; i < num_bitmaps; ++i)
+            {
+                uint32_t expected_size = 0;
+                if (!read_binary(is, expected_size))
+                {
+                    std::cerr << "Error reading size for bitmap " << i << std::endl;
+                    return false;
+                }
+
+                if (expected_size > 0)
+                {
+                    std::vector<char> buffer(expected_size);
+                    is.read(buffer.data(), expected_size);
+                    if (!is.good() || static_cast<uint32_t>(is.gcount()) != expected_size)
+                    {
+                        std::cerr << "Error reading data for bitmap " << i << " (expected " << expected_size <<
+                            " bytes)." << std::endl;
+                        return false;
+                    }
+
+                    try
+                    {
+                        // ---> FIX: Use readSafe based on user finding <---
+                        tag_to_bitmap_[i] = roaring::Roaring::readSafe(buffer.data(), expected_size);
+                    }
+                    catch (const std::exception& de)
+                    {
+                        // readSafe might terminate on error based on the snippet,
+                        // but we keep the catch block for other potential issues.
+                        std::cerr << "Error during deserialization for bitmap " << i << ": " << de.what() << std::endl;
+                        return false;
+                    }
+                }
+                else
+                {
+                    tag_to_bitmap_[i] = roaring::Roaring(); // Assign empty bitmap
+                }
+            }
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Error loading InvertedIndex: " << e.what() << std::endl;
+            tag_to_bitmap_.clear();
+            return false;
+        }
+
+        // Optional: Check for trailing data
+        is.peek(); // Try to read one more character
+        if (!is.eof())
+        {
+            std::cerr << "Warning: Trailing data found after loading InvertedIndex." << std::endl;
+            // Decide if this is an error or acceptable
+        }
+
+        return true; // Success means we read exactly what was expected
+    }
+
+    void InvertedIndex::clear() {
+        // std::unique_lock lock(rw_mutex_); // Lock if clearing needs protection
+        tag_to_bitmap_.clear();
+        // Optionally add shrink_to_fit if needed
+        // tag_to_bitmap_.shrink_to_fit();
     }
 } // namespace bitmap_index::core

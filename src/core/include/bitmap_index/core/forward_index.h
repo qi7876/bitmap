@@ -3,6 +3,7 @@
 
 #include "bitmap_index/core/types.h"
 #include <vector>
+#include <iosfwd> // For std::ostream, std::istream
 #include <shared_mutex> // For potential future read/write locking
 
 namespace bitmap_index
@@ -66,10 +67,30 @@ namespace bitmap_index
              */
             size_t getDocCount() const;
 
+            /**
+             * @brief Clears all data from the forward index.
+             */
+            void clear(); // <--- ADD THIS
+
+            /**
+             * @brief Saves the forward index to a binary output stream.
+             * Format: [uint64_t num_docs] ([uint64_t num_tags_for_doc_i] [TagId...]...)
+             * @param os Output stream.
+             * @return True on success.
+             */
+            bool save(std::ostream& os) const;
+            /**
+             * @brief Loads the forward index from a binary input stream. Clears existing data.
+             * @param is Input stream.
+             * @return True on success.
+             */
+            bool load(std::istream& is);
+
         private:
             std::vector<std::vector<TagId>> doc_to_tags_;
-            // mutable std::shared_mutex rw_mutex_; // For future concurrent read/write
+            // This const member causes the assignment operator issue
             const std::vector<TagId> empty_vector_ = {}; // Static empty vector for safe returns
+            // mutable std::shared_mutex rw_mutex_;
         };
     } // namespace core
 } // namespace bitmap_index
