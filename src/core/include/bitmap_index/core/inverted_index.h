@@ -96,6 +96,30 @@ namespace bitmap_index
              */
             void shrinkToFit();
 
+            /**
+             * @brief Saves the inverted index to a binary output stream.
+             * Uses Roaring's portable serialization format.
+             * Format: [uint64_t num_bitmaps] [bitmap_1_data] [bitmap_2_data] ...
+             * where bitmap_data is: [uint32_t size] [byte data...]
+             * @param os The output stream to write to.
+             * @return True on success, false on failure.
+             */
+            bool save(std::ostream& os) const;
+
+            /**
+             * @brief Loads the inverted index from a binary input stream.
+             * Clears existing data before loading.
+             * Expects the format written by save().
+             * @param is The input stream to read from.
+             * @return True on success, false on failure.
+             */
+            bool load(std::istream& is);
+
+            /**
+             * @brief Clears all data from the inverted index.
+             */
+            void clear(); // <--- ADD THIS DECLARATION
+
         private:
             // Ensures the internal vector is large enough for the given tag_id,
             // resizing and default-constructing bitmaps if necessary.

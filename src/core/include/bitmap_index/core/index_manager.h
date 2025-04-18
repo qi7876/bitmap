@@ -16,7 +16,6 @@ namespace bitmap_index
 {
     namespace core
     {
-
         /**
          * @brief Manages the overall bitmap index, coordinating loading, mapping, and querying.
          *
@@ -76,8 +75,23 @@ namespace bitmap_index
             size_t getTagCount() const;
 
             // --- TODO: Persistence Methods (Optional) ---
-            // bool saveIndex(const std::filesystem::path& directory);
-            // bool loadIndex(const std::filesystem::path& directory);
+            /**
+             * @brief Saves the entire index state to the specified directory.
+             * Creates the directory if it doesn't exist.
+             * Saves mapping, forward index, and inverted index to separate files.
+             * @param directory The directory path to save the index files into.
+             * @return True if all components saved successfully, false otherwise.
+             */
+            bool saveIndex(const std::filesystem::path& directory) const; // Made const
+
+            /**
+             * @brief Loads the entire index state from the specified directory.
+             * Assumes files were saved using saveIndex(). Clears existing index data.
+             * @param directory The directory path to load the index files from.
+             * @return True if all components loaded successfully, false otherwise.
+             */
+            bool loadIndex(const std::filesystem::path& directory);
+            void clearIndicesOnError();
 
         private:
             /**
@@ -110,7 +124,6 @@ namespace bitmap_index
             // Use std::unique_lock for writes (loadIncremental), std::shared_lock for reads (queries)
             mutable std::shared_mutex manager_mutex_;
         };
-
     } // namespace core
 } // namespace bitmap_index
 
