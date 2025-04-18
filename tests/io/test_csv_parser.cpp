@@ -18,13 +18,17 @@ using namespace bitmap_index::io;
 // --- Catch2 StringMaker Specializations ---
 
 // Helper to print vector elements
-namespace Catch {
-    template<>
-    struct StringMaker<std::vector<std::string>> {
-        static std::string convert(const std::vector<std::string>& v) {
+namespace Catch
+{
+    template <>
+    struct StringMaker<std::vector<std::string>>
+    {
+        static std::string convert(const std::vector<std::string>& v)
+        {
             std::stringstream ss;
             ss << "{ ";
-            if (!v.empty()) {
+            if (!v.empty())
+            {
                 std::copy(v.begin(), v.end() - 1, std::ostream_iterator<std::string>(ss, "\", \""));
                 ss << "\"" << v.back() << "\"";
             }
@@ -34,17 +38,22 @@ namespace Catch {
     };
 
     // Helper to print map elements
-    template<>
-    struct StringMaker<std::map<std::string, std::vector<std::string>>> {
-        static std::string convert(const std::map<std::string, std::vector<std::string>>& m) {
+    template <>
+    struct StringMaker<std::map<std::string, std::vector<std::string>>>
+    {
+        static std::string convert(const std::map<std::string, std::vector<std::string>>& m)
+        {
             std::stringstream ss;
             ss << "{ ";
             bool first = true;
-            for (const auto& pair : m) {
-                if (!first) {
+            for (const auto& pair : m)
+            {
+                if (!first)
+                {
                     ss << ", ";
                 }
-                ss << "{\"" << pair.first << "\": " << StringMaker<std::vector<std::string>>::convert(pair.second) << "}";
+                ss << "{\"" << pair.first << "\": " << StringMaker<std::vector<std::string>>::convert(pair.second) <<
+                    "}";
                 first = false;
             }
             ss << " }";
@@ -57,28 +66,35 @@ namespace Catch {
 
 // --- Test Helper ---
 // Simple RAII helper for temporary files (can be shared or redefined)
-class TestFile {
+class TestFile
+{
 public:
-    TestFile(const fs::path& path, const std::string& content) : path_(path) {
+    TestFile(const fs::path& path, const std::string& content) : path_(path)
+    {
         std::ofstream outfile(path_);
         outfile << content;
         outfile.flush(); // Explicitly flush buffers
         outfile.close(); // Explicitly close the file
         // Destructor will still run but file is already closed
     }
-    ~TestFile() {
+
+    ~TestFile()
+    {
         std::error_code ec;
         fs::remove(path_, ec); // Ignore error on cleanup
     }
+
     const fs::path& getPath() const { return path_; }
+
 private:
     fs::path path_;
 };
+
 // --- End Test Helper ---
 
 
-TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
-
+TEST_CASE("CsvParser Tests", "[io][csv_parser]")
+{
     const fs::path test_dir = "csv_parser_test_files"; // Subdir for test files
     fs::create_directory(test_dir); // Ensure it exists
 
@@ -87,7 +103,8 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
     std::map<StringId, StringTagSet> parsed_data;
     // Define the callback lambda
     // Define the callback lambda
-    auto callback = [&](StringId&& id, StringTagSet&& tags) {
+    auto callback = [&](StringId&& id, StringTagSet&& tags)
+    {
         REQUIRE(!id.empty());
 
         // --- SAFER INSERTION ---
@@ -105,7 +122,8 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
 
     // --- Test Sections ---
 
-    SECTION("Basic Parsing with default delimiter '|'") {
+    SECTION("Basic Parsing with default delimiter '|'")
+    {
         const fs::path file_path = test_dir / "basic.csv";
         const std::string content =
             "id1 | tag1 | tag2\n"
@@ -126,14 +144,15 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
         REQUIRE(parsed_data == expected);
     }
 
-    SECTION("Whitespace Handling") {
+    SECTION("Whitespace Handling")
+    {
         const fs::path file_path = test_dir / "whitespace.csv";
         const std::string content =
             "  id1 | tag1 |  tag2  \n" // Leading/trailing space in fields/line
-            "id2 |tag3 \n"             // No space after delimiter
-            "\n"                       // Empty line
-            "   \t   \n"               // Whitespace only line
-            "id3| tag4 |tag5\n";       // Mixed spacing
+            "id2 |tag3 \n" // No space after delimiter
+            "\n" // Empty line
+            "   \t   \n" // Whitespace only line
+            "id3| tag4 |tag5\n"; // Mixed spacing
         TestFile test_file(file_path, content);
 
         CsvParser parser('|');
@@ -149,7 +168,8 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
         REQUIRE(parsed_data == expected);
     }
 
-    SECTION("Custom Delimiter ','") {
+    SECTION("Custom Delimiter ','")
+    {
         const fs::path file_path = test_dir / "custom_delim.csv";
         const std::string content =
             "id1,tag1,tag2\n"
@@ -168,13 +188,14 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
         REQUIRE(parsed_data == expected);
     }
 
-    SECTION("Handling Empty Tags") {
+    SECTION("Handling Empty Tags")
+    {
         const fs::path file_path = test_dir / "empty_tags.csv";
         // Assumes parser skips empty tags after trimming
         const std::string content =
             "id1 | tag1 || tag3\n" // Empty tag between tag1 and tag3
-            "id2 | | tag4\n"      // Leading empty tag
-            "id3 | tag5 | \n";    // Trailing empty tag
+            "id2 | | tag4\n" // Leading empty tag
+            "id3 | tag5 | \n"; // Trailing empty tag
         TestFile test_file(file_path, content);
 
         CsvParser parser('|');
@@ -190,12 +211,13 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
         REQUIRE(parsed_data == expected);
     }
 
-     SECTION("ID Only (No Tags)") {
+    SECTION("ID Only (No Tags)")
+    {
         const fs::path file_path = test_dir / "id_only.csv";
         const std::string content =
-            "id1\n"          // ID only, no delimiter
-            "id2 |\n"        // ID with delimiter but no tags
-            "id3 | \n";      // ID with delimiter and whitespace tag (skipped)
+            "id1\n" // ID only, no delimiter
+            "id2 |\n" // ID with delimiter but no tags
+            "id3 | \n"; // ID with delimiter and whitespace tag (skipped)
         TestFile test_file(file_path, content);
 
         CsvParser parser('|');
@@ -211,13 +233,14 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
         REQUIRE(parsed_data == expected);
     }
 
-    SECTION("Malformed Lines (Skipped)") {
+    SECTION("Malformed Lines (Skipped)")
+    {
         const fs::path file_path = test_dir / "malformed.csv";
         const std::string content =
             "id1 | tag1\n"
             " | tag2 | tag3\n" // Missing ID
             "id2 | tag4\n"
-            "   | tag5\n";     // Whitespace ID (treated as missing)
+            "   | tag5\n"; // Whitespace ID (treated as missing)
         TestFile test_file(file_path, content);
 
         CsvParser parser('|');
@@ -236,7 +259,8 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
         // Checking the resulting data is the primary goal.
     }
 
-    SECTION("Empty File") {
+    SECTION("Empty File")
+    {
         const fs::path file_path = test_dir / "empty.csv";
         TestFile test_file(file_path, ""); // Empty content
 
@@ -247,7 +271,8 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
         REQUIRE(parsed_data.empty()); // No data should be parsed
     }
 
-    SECTION("Non-Existent File") {
+    SECTION("Non-Existent File")
+    {
         const fs::path file_path = test_dir / "non_existent.csv";
         // Ensure file does not exist
         fs::remove(file_path);
@@ -259,7 +284,8 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
         REQUIRE(parsed_data.empty()); // No data should have been parsed
     }
 
-    SECTION("Stream Parsing") {
+    SECTION("Stream Parsing")
+    {
         const std::string content =
             "sid1 | stag1 | stag2\n"
             "sid2 | stag3\n";
@@ -277,7 +303,8 @@ TEST_CASE("CsvParser Tests", "[io][csv_parser]") {
         REQUIRE(parsed_data == expected);
     }
 
-     SECTION("Stream Parsing with Offset") {
+    SECTION("Stream Parsing with Offset")
+    {
         const std::string content =
             "line_to_skip | tagA\n" // This line should be skipped
             "line1 | tag1 | tag2\n"

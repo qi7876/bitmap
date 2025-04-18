@@ -9,22 +9,26 @@ namespace fs = std::filesystem;
 using namespace bitmap_index::utils;
 
 // Helper class for managing temporary test files/dirs using RAII
-class TestFile {
+class TestFile
+{
 public:
     // Create an empty file
-    TestFile(const fs::path& path) : path_(path) {
+    TestFile(const fs::path& path) : path_(path)
+    {
         std::ofstream outfile(path_);
         outfile.close(); // Create empty file
     }
 
     // Create a file with content
-    TestFile(const fs::path& path, const std::string& content) : path_(path) {
+    TestFile(const fs::path& path, const std::string& content) : path_(path)
+    {
         std::ofstream outfile(path_);
         outfile << content;
         outfile.close();
     }
 
-    ~TestFile() {
+    ~TestFile()
+    {
         std::error_code ec;
         fs::remove(path_, ec); // Ignore error on cleanup
     }
@@ -35,26 +39,29 @@ private:
     fs::path path_;
 };
 
-class TestDirectory {
+class TestDirectory
+{
 public:
-    TestDirectory(const fs::path& path) : path_(path) {
+    TestDirectory(const fs::path& path) : path_(path)
+    {
         fs::create_directory(path_);
     }
 
-    ~TestDirectory() {
+    ~TestDirectory()
+    {
         std::error_code ec;
         fs::remove(path_, ec); // Remove directory
     }
 
-     const fs::path& getPath() const { return path_; }
+    const fs::path& getPath() const { return path_; }
 
 private:
-     fs::path path_;
+    fs::path path_;
 };
 
 
-TEST_CASE("File Utilities", "[file_util]") {
-
+TEST_CASE("File Utilities", "[file_util]")
+{
     // Define paths relative to the build/test directory or use absolute paths
     // Using fs::temp_directory_path() is often safer
     // fs::path test_dir = fs::temp_directory_path() / "bitmap_index_tests";
@@ -77,7 +84,8 @@ TEST_CASE("File Utilities", "[file_util]") {
 
 
     // --- fileExists Tests ---
-    SECTION("fileExists") {
+    SECTION("fileExists")
+    {
         REQUIRE(fileExists(existing_file.getPath()) == true);
         REQUIRE(fileExists(empty_file.getPath()) == true);
         REQUIRE(fileExists(non_existent_path) == false);
@@ -85,7 +93,8 @@ TEST_CASE("File Utilities", "[file_util]") {
     }
 
     // --- getFileSize Tests ---
-    SECTION("getFileSize") {
+    SECTION("getFileSize")
+    {
         REQUIRE(getFileSize(existing_file.getPath()) == file_content.length());
         REQUIRE(getFileSize(empty_file.getPath()) == 0);
         REQUIRE(getFileSize(non_existent_path) == 0);

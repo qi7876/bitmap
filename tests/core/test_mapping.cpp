@@ -7,17 +7,18 @@
 #include <iterator>
 #include <algorithm>
 
-namespace fs = std::filesystem;
 using namespace bitmap_index::core;
 
 
-TEST_CASE("Mapping - Basic Document ID Operations", "[core][mapping]") {
+TEST_CASE("Mapping - Basic Document ID Operations", "[core][mapping]")
+{
     Mapping mapping;
 
     REQUIRE(mapping.getNextDocId() == 0);
     REQUIRE(mapping.getDocCount() == 0);
 
-    SECTION("Add and retrieve first document ID") {
+    SECTION("Add and retrieve first document ID")
+    {
         StringId id_str1 = "doc001";
         DocId id1 = mapping.getId(id_str1);
         REQUIRE(id1 == 0);
@@ -26,7 +27,8 @@ TEST_CASE("Mapping - Basic Document ID Operations", "[core][mapping]") {
         REQUIRE(mapping.getStringId(id1) == id_str1);
     }
 
-    SECTION("Add the same document ID again") {
+    SECTION("Add the same document ID again")
+    {
         StringId id_str1 = "doc001";
         DocId id1 = mapping.getId(id_str1); // First add
         REQUIRE(id1 == 0);
@@ -37,7 +39,8 @@ TEST_CASE("Mapping - Basic Document ID Operations", "[core][mapping]") {
         REQUIRE(mapping.getDocCount() == 1); // Count should not change
     }
 
-    SECTION("Add multiple unique document IDs") {
+    SECTION("Add multiple unique document IDs")
+    {
         StringId id_str1 = "doc_A";
         StringId id_str2 = "doc_B";
         StringId id_str3 = "doc_C";
@@ -58,7 +61,8 @@ TEST_CASE("Mapping - Basic Document ID Operations", "[core][mapping]") {
         REQUIRE(mapping.getStringId(id3) == id_str3);
     }
 
-    SECTION("Retrieve non-existent or invalid document IDs") {
+    SECTION("Retrieve non-existent or invalid document IDs")
+    {
         REQUIRE(mapping.getStringId(0) == ""); // No IDs added yet
         REQUIRE(mapping.getStringId(100) == "");
         REQUIRE(mapping.getStringId(INVALID_DOC_ID) == "");
@@ -68,7 +72,8 @@ TEST_CASE("Mapping - Basic Document ID Operations", "[core][mapping]") {
         REQUIRE(mapping.getStringId(1) == ""); // ID 1 doesn't exist yet
     }
 
-     SECTION("Handle empty string document ID input") {
+    SECTION("Handle empty string document ID input")
+    {
         StringId empty_str = "";
         DocId invalid_id = mapping.getId(empty_str);
         REQUIRE(invalid_id == INVALID_DOC_ID);
@@ -77,13 +82,15 @@ TEST_CASE("Mapping - Basic Document ID Operations", "[core][mapping]") {
     }
 }
 
-TEST_CASE("Mapping - Basic Tag ID Operations", "[core][mapping]") {
+TEST_CASE("Mapping - Basic Tag ID Operations", "[core][mapping]")
+{
     Mapping mapping;
 
     REQUIRE(mapping.getNextTagId() == 0);
     REQUIRE(mapping.getTagCount() == 0);
 
-    SECTION("Add and retrieve first tag ID") {
+    SECTION("Add and retrieve first tag ID")
+    {
         StringTag tag_str1 = "category:sports";
         TagId id1 = mapping.getTagId(tag_str1);
         REQUIRE(id1 == 0);
@@ -92,7 +99,8 @@ TEST_CASE("Mapping - Basic Tag ID Operations", "[core][mapping]") {
         REQUIRE(mapping.getStringTag(id1) == tag_str1);
     }
 
-    SECTION("Add the same tag ID again") {
+    SECTION("Add the same tag ID again")
+    {
         StringTag tag_str1 = "category:sports";
         TagId id1 = mapping.getTagId(tag_str1); // First add
         REQUIRE(id1 == 0);
@@ -103,7 +111,8 @@ TEST_CASE("Mapping - Basic Tag ID Operations", "[core][mapping]") {
         REQUIRE(mapping.getTagCount() == 1); // Count should not change
     }
 
-    SECTION("Add multiple unique tag IDs") {
+    SECTION("Add multiple unique tag IDs")
+    {
         StringTag tag_str1 = "color:red";
         StringTag tag_str2 = "size:large";
         StringTag tag_str3 = "material:cotton";
@@ -124,7 +133,8 @@ TEST_CASE("Mapping - Basic Tag ID Operations", "[core][mapping]") {
         REQUIRE(mapping.getStringTag(id3) == tag_str3);
     }
 
-     SECTION("Retrieve non-existent or invalid tag IDs") {
+    SECTION("Retrieve non-existent or invalid tag IDs")
+    {
         REQUIRE(mapping.getStringTag(0) == ""); // No IDs added yet
         REQUIRE(mapping.getStringTag(100) == "");
         REQUIRE(mapping.getStringTag(INVALID_TAG_ID) == "");
@@ -134,7 +144,8 @@ TEST_CASE("Mapping - Basic Tag ID Operations", "[core][mapping]") {
         REQUIRE(mapping.getStringTag(1) == ""); // ID 1 doesn't exist yet
     }
 
-     SECTION("Handle empty string tag ID input") {
+    SECTION("Handle empty string tag ID input")
+    {
         StringTag empty_str = "";
         TagId invalid_id = mapping.getTagId(empty_str);
         REQUIRE(invalid_id == INVALID_TAG_ID);
@@ -143,10 +154,12 @@ TEST_CASE("Mapping - Basic Tag ID Operations", "[core][mapping]") {
     }
 }
 
-TEST_CASE("Mapping - Move Semantics", "[core][mapping]") {
+TEST_CASE("Mapping - Move Semantics", "[core][mapping]")
+{
     Mapping mapping;
 
-    SECTION("Move semantics for DocId") {
+    SECTION("Move semantics for DocId")
+    {
         StringId original_doc_str = "move_doc_1";
         std::string copy_doc_str = original_doc_str; // Keep a copy for verification
 
@@ -161,20 +174,20 @@ TEST_CASE("Mapping - Move Semantics", "[core][mapping]") {
 
         // Add another one using move
         StringId original_doc_str2 = "move_doc_2";
-         std::string copy_doc_str2 = original_doc_str2;
-         DocId id2 = mapping.getId(std::move(original_doc_str2));
-         REQUIRE(id2 == 1);
-         REQUIRE(mapping.getNextDocId() == 2);
-         REQUIRE(mapping.getDocCount() == 2);
-         REQUIRE(mapping.getStringId(id2) == copy_doc_str2);
+        std::string copy_doc_str2 = original_doc_str2;
+        DocId id2 = mapping.getId(std::move(original_doc_str2));
+        REQUIRE(id2 == 1);
+        REQUIRE(mapping.getNextDocId() == 2);
+        REQUIRE(mapping.getDocCount() == 2);
+        REQUIRE(mapping.getStringId(id2) == copy_doc_str2);
 
-         // Check that getting the moved ID again works
-         DocId id1_again = mapping.getId(copy_doc_str); // Use the copy to lookup
-         REQUIRE(id1_again == id1);
-
+        // Check that getting the moved ID again works
+        DocId id1_again = mapping.getId(copy_doc_str); // Use the copy to lookup
+        REQUIRE(id1_again == id1);
     }
 
-     SECTION("Move semantics for TagId") {
+    SECTION("Move semantics for TagId")
+    {
         StringTag original_tag_str = "move_tag_A";
         std::string copy_tag_str = original_tag_str; // Keep a copy
 
@@ -185,17 +198,17 @@ TEST_CASE("Mapping - Move Semantics", "[core][mapping]") {
         REQUIRE(mapping.getTagCount() == 1);
         REQUIRE(mapping.getStringTag(id1) == copy_tag_str);
 
-         // Add another one using move
+        // Add another one using move
         StringTag original_tag_str2 = "move_tag_B";
-         std::string copy_tag_str2 = original_tag_str2;
-         TagId id2 = mapping.getTagId(std::move(original_tag_str2));
-         REQUIRE(id2 == 1);
-         REQUIRE(mapping.getNextTagId() == 2);
-         REQUIRE(mapping.getTagCount() == 2);
-         REQUIRE(mapping.getStringTag(id2) == copy_tag_str2);
+        std::string copy_tag_str2 = original_tag_str2;
+        TagId id2 = mapping.getTagId(std::move(original_tag_str2));
+        REQUIRE(id2 == 1);
+        REQUIRE(mapping.getNextTagId() == 2);
+        REQUIRE(mapping.getTagCount() == 2);
+        REQUIRE(mapping.getStringTag(id2) == copy_tag_str2);
 
-         // Check that getting the moved ID again works
-         TagId id1_again = mapping.getTagId(copy_tag_str); // Use the copy to lookup
-         REQUIRE(id1_again == id1);
+        // Check that getting the moved ID again works
+        TagId id1_again = mapping.getTagId(copy_tag_str); // Use the copy to lookup
+        REQUIRE(id1_again == id1);
     }
 }
